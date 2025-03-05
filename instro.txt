@@ -1,0 +1,5 @@
+there are two resouces: : money($), power(e) 
+the minimum is 0 
+each initial: 100$, 500power
+plant tree take: 10$
+build a solar: 
