@@ -15,7 +15,7 @@ class PuzzleGame:
         # Game state
         self.active = False
         self.puzzle_solved = False
-        self.time_limit = 1  # seconds
+        self.time_limit = 120  # seconds
         self.start_time = 0
         self.remaining_time = self.time_limit
         self.show_continue = False
