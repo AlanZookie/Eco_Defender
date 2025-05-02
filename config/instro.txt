@@ -1,0 +1,35 @@
+there are two resouces: : money($), power(e) 
+the minimum is 0 
+each initial: 100$, 300power
+plant tree take: 5$
+build a solar: 10$
+build a recycle: 50$
+If we don't have enough resouces, we can't build tower.
+
+each Recycle: cost 3e and make 1$ per sec
+each solar: make 1e per sec
+
+only tree can eliminate enemy
+when enemy contact with solar or recycle, The latter will be destroyed
+
+the operation prototype is to click on the window to build random tower. Now we use 1: tree, 2: solar, 3: recycle to swtich the tower we want to build.
+also write some instrution for operation in the window.
+
+4/28
+Complete startmenu. 
+
+Plan:
+The main process I want to be a plot. Subtitle is typed under the bottom. As the slot going, the corresponding game will begin. 
+Pollution, deforestation, and climate disasters. 
+Pollution, deforestation should each set a Cumulative value. Climate disasters should be a random.
+Pollution: Tower defend. Waste water, gas, trash, recycle, mouse...
+Deforestation: Puzzle
+Climate disasters: Limited time to arrange.
+
+4/29
+Complete basic process
+
+Plan: 
+complete plot, different image, color frame, music
+event trigger. start counting after begin, stop after game start
+complete option.
