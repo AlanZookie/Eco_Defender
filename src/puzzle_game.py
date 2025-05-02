@@ -15,7 +15,7 @@ class PuzzleGame:
         # Game state
         self.active = False
         self.puzzle_solved = False
-        self.time_limit = 120  # seconds
+        self.time_limit = 600  # seconds
         self.start_time = 0
         self.remaining_time = self.time_limit
         self.show_continue = False
@@ -28,70 +28,17 @@ class PuzzleGame:
         self.grid_offset_y = (self.height - self.grid_size * self.tile_size) // 2
         
         # Load and prepare tree image
-        tree_img_path = os.path.join('assets', 'images', 'tree_puzzle.png')
+        tree_img_path = os.path.join('assets', 'images', 'tree_2.png')
         if os.path.exists(tree_img_path):
             self.original_image = pygame.image.load(tree_img_path)
             self.original_image = pygame.transform.scale(self.original_image, 
                                                       (self.tile_size * self.grid_size, 
                                                        self.tile_size * self.grid_size))
         else:
-            # Create a more vivid and detailed tree image
+            # Create a placeholder image if tree_2.png doesn't exist
             self.original_image = pygame.Surface((self.tile_size * self.grid_size, 
                                                 self.tile_size * self.grid_size))
             self.original_image.fill((135, 206, 235))  # Sky blue background
-            
-            # Draw detailed tree trunk
-            trunk_width = self.tile_size * self.grid_size // 4
-            trunk_height = self.tile_size * self.grid_size // 2
-            trunk_x = self.tile_size * self.grid_size // 2 - trunk_width // 2
-            trunk_y = self.tile_size * self.grid_size - trunk_height
-            
-            # Draw main trunk
-            pygame.draw.rect(self.original_image, (101, 67, 33),  # Dark brown
-                           (trunk_x, trunk_y, trunk_width, trunk_height))
-            
-            # Draw tree bark texture
-            for i in range(5):
-                bark_x = trunk_x + i * trunk_width // 4
-                pygame.draw.line(self.original_image, (139, 69, 19),  # Lighter brown
-                               (bark_x, trunk_y),
-                               (bark_x, trunk_y + trunk_height), 2)
-            
-            # Draw detailed leaves
-            leaf_colors = [(34, 139, 34), (0, 100, 0), (0, 128, 0)]  # Different shades of green
-            
-            # Draw three layers of leaves
-            for layer in range(3):
-                leaf_size = self.tile_size * self.grid_size // (2 + layer)
-                leaf_y = trunk_y - (layer * leaf_size // 2)
-                
-                # Draw left side leaves
-                for i in range(3):
-                    leaf_x = trunk_x - leaf_size // 2 + i * leaf_size // 3
-                    pygame.draw.circle(self.original_image, leaf_colors[layer],
-                                     (leaf_x, leaf_y), leaf_size // 3)
-                
-                # Draw right side leaves
-                for i in range(3):
-                    leaf_x = trunk_x + trunk_width + leaf_size // 2 - i * leaf_size // 3
-                    pygame.draw.circle(self.original_image, leaf_colors[layer],
-                                     (leaf_x, leaf_y), leaf_size // 3)
-                
-                # Draw center leaves
-                for i in range(2):
-                    leaf_x = trunk_x + trunk_width // 2 + (i * 2 - 1) * leaf_size // 4
-                    pygame.draw.circle(self.original_image, leaf_colors[layer],
-                                     (leaf_x, leaf_y), leaf_size // 3)
-            
-            # Draw some apples
-            apple_positions = [
-                (trunk_x + trunk_width // 4, trunk_y + trunk_height // 4),
-                (trunk_x + trunk_width * 3 // 4, trunk_y + trunk_height // 3),
-                (trunk_x + trunk_width // 2, trunk_y + trunk_height // 2)
-            ]
-            for pos in apple_positions:
-                pygame.draw.circle(self.original_image, (255, 0, 0), pos, 8)  # Red apple
-                pygame.draw.circle(self.original_image, (0, 0, 0), pos, 8, 1)  # Apple outline
         
         # Initialize puzzle
         self.tiles = []
@@ -125,7 +72,7 @@ class PuzzleGame:
         self.remaining_time = 0
 
     def generate_puzzle(self):
-        """Generate a new sliding puzzle"""
+        """Generate a new solvable sliding puzzle"""
         # Create tiles from the original image
         self.tiles = []
         for y in range(self.grid_size):
@@ -134,13 +81,35 @@ class PuzzleGame:
                     x * self.tile_size, y * self.tile_size,
                     self.tile_size, self.tile_size
                 )
-                self.tiles.append(tile)
+                # Create a surface for the numbered tile
+                numbered_tile = pygame.Surface((self.tile_size, self.tile_size))
+                numbered_tile.blit(tile, (0, 0))
+                
+                # Add number to the tile
+                number = y * self.grid_size + x + 1
+                if number < self.grid_size * self.grid_size:  # Don't number the empty space
+                    number_text = self.small_font.render(str(number), True, (255, 255, 255))
+                    text_rect = number_text.get_rect(center=(self.tile_size//2, self.tile_size//2))
+                    pygame.draw.rect(numbered_tile, (0, 0, 0, 128), 
+                                   (text_rect.x-5, text_rect.y-5, 
+                                    text_rect.width+10, text_rect.height+10))
+                    numbered_tile.blit(number_text, text_rect)
+                
+                self.tiles.append(numbered_tile)
         
         # Set empty position (bottom right)
         self.empty_pos = (self.grid_size - 1, self.grid_size - 1)
         
-        # Shuffle the puzzle
+        # Generate a solvable puzzle by making valid moves
+        # Start from the solved state and make random moves
         for _ in range(100):  # Perform 100 random moves
+            possible_moves = self.get_possible_moves()
+            if possible_moves:
+                self.swap_tiles(random.choice(possible_moves))
+                
+        # Verify the puzzle is not already solved
+        if self.check_solution():
+            # If by chance it's solved, make one more move
             possible_moves = self.get_possible_moves()
             if possible_moves:
                 self.swap_tiles(random.choice(possible_moves))
@@ -177,16 +146,44 @@ class PuzzleGame:
         self.moves += 1
 
     def check_solution(self):
-        """Check if the puzzle is solved"""
-        for i, tile in enumerate(self.tiles):
+        """Check if the puzzle is solved with correct tile order"""
+        # Check if empty space is in the correct position (bottom right)
+        if self.empty_pos != (self.grid_size - 1, self.grid_size - 1):
+            return False
+            
+        # Check if all tiles are in the correct order
+        for i in range(self.grid_size * self.grid_size - 1):  # Check all tiles except empty space
             x = i % self.grid_size
             y = i // self.grid_size
-            original_tile = self.original_image.subsurface(
-                x * self.tile_size, y * self.tile_size,
-                self.tile_size, self.tile_size
-            )
-            if tile != original_tile:
-                return False
+            tile_idx = y * self.grid_size + x
+            
+            # The number should be i + 1 (1-based indexing)
+            expected_number = i + 1
+            
+            # Create a temporary surface to render the expected number
+            temp_surface = pygame.Surface((self.tile_size, self.tile_size))
+            number_text = self.small_font.render(str(expected_number), True, (255, 255, 255))
+            text_rect = number_text.get_rect(center=(self.tile_size//2, self.tile_size//2))
+            pygame.draw.rect(temp_surface, (0, 0, 0, 128), 
+                           (text_rect.x-5, text_rect.y-5, 
+                            text_rect.width+10, text_rect.height+10))
+            temp_surface.blit(number_text, text_rect)
+            
+            # Compare multiple points to ensure the numbers match
+            center_x = self.tile_size // 2
+            center_y = self.tile_size // 2
+            points_to_check = [
+                (center_x, center_y),
+                (center_x - 5, center_y),
+                (center_x + 5, center_y),
+                (center_x, center_y - 5),
+                (center_x, center_y + 5)
+            ]
+            
+            for point in points_to_check:
+                if (temp_surface.get_at(point) != self.tiles[tile_idx].get_at(point)):
+                    return False
+                
         return True
 
     def handle_click(self, pos):
@@ -222,6 +219,7 @@ class PuzzleGame:
                     self.puzzle_solved = True
                     self.stats_manager.set('deforestation', 0.35)  # Set deforestation to 35%
                     self.show_continue = True
+                    # Don't set active to False here, let the continue button handle it
                     return True
                 
         return False
@@ -237,8 +235,6 @@ class PuzzleGame:
         # Check if time ran out
         if self.remaining_time <= 0 and not self.puzzle_solved:
             self.show_continue = True
-            # Increase deforestation by 0.05 when time runs out
-            # current_deforestation = self.stats_manager.get('deforestation')
             self.stats_manager.set('deforestation', 0.88)
 
     def draw(self):
@@ -283,17 +279,36 @@ class PuzzleGame:
         
         # Draw success/failure message
         if self.puzzle_solved:
-            success_text = f"Success! Deforestation reduced to 35% (Moves: {self.moves})"
-            text_surface = self.font.render(success_text, True, (0, 255, 0))
-            self.screen.blit(text_surface, 
-                           (self.width // 2 - text_surface.get_width() // 2,
-                            self.height - 100))
+            # Draw a green background for the success message
+            success_bg = pygame.Surface((self.width - 100, 150), pygame.SRCALPHA)
+            success_bg.fill((0, 100, 0, 200))  # Semi-transparent green
+            self.screen.blit(success_bg, (50, self.height - 200))
+            
+            # Draw success messages
+            success_messages = [
+                "Congratulations!",
+                "You've successfully planted new trees!",
+                f"Completed in {self.moves} moves",
+                "Deforestation reduced to 35%"
+            ]
+            
+            for i, text in enumerate(success_messages):
+                text_surface = self.font.render(text, True, (255, 255, 255))
+                text_x = self.width // 2 - text_surface.get_width() // 2
+                text_y = self.height - 180 + i * 35
+                self.screen.blit(text_surface, (text_x, text_y))
+                
         elif self.remaining_time <= 0:
-            failure_text = "Time's up!"
-            text_surface = self.font.render(failure_text, True, (255, 0, 0))
+            # Draw a red background for the failure message
+            failure_bg = pygame.Surface((self.width - 100, 100), pygame.SRCALPHA)
+            failure_bg.fill((100, 0, 0, 200))  # Semi-transparent red
+            self.screen.blit(failure_bg, (50, self.height - 150))
+            
+            failure_text = "Time's up! The trees couldn't be saved."
+            text_surface = self.font.render(failure_text, True, (255, 255, 255))
             self.screen.blit(text_surface,
                            (self.width // 2 - text_surface.get_width() // 2,
-                            self.height - 100))
+                            self.height - 130))
         
         # Draw continue button if game is over
         if self.show_continue:
