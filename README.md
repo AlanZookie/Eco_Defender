@@ -1,6 +1,8 @@
 # Eco_Defender
 
-Eco Defender is a tower defense game where players protect a city from environmental threats like pollution, deforestation, and climate disasters. Players strategically place eco-friendly defenses such as solar panels, tree plantations, and recycling centers to combat pollution waves. 
-The game aims to be engaging and educational, raising awareness about sustainability through fun, fast-paced gameplay. Our focus is on making the game cheap and fast to develop while ensuring a smooth and enjoyable user experience.
+Eco Defender is a narrative choice-driven game where players guide a city through environmental crises such as pollution, deforestation, and climate disasters. Players progress by making impactful decisions that shape the environment and storyline.
 
-There 3 modes: pollution, deforestation, and climate disasters
+At key moments, the game transitions into fast-paced eco-themed mini-games—like a plane shooting game to disperse toxic clouds or a puzzle challenge to regrow forests—adding variety and action to the experience.
+
+Designed for quick and affordable development, Eco Defender blends education and fun, helping players understand sustainability while engaging them with smooth, interactive gameplay.
+
